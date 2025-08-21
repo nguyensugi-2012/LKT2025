@@ -1,5 +1,6 @@
 const express = require('express');
 const http = require('http');
+const path = require('path');
 const socketIo = require('socket.io');
 
 const app = express();
@@ -9,26 +10,30 @@ const io = new socketIo.Server(server);
 const CORRECT_PASSWORD = "46368";
 const COOLDOWN_SECONDS = 60;
 
-// THAY ĐỔI: Chuyển sang dùng persistentId làm key
-const cooldowns = new Map(); // Map<persistentId, cooldownEndTime>
+const activePlayerNames = new Set();
+const socketIdToPlayerName = new Map();
+const cooldowns = new Map();
+const playerSocketMap = new Map();
 
-// THAY ĐỔI MỚI: Map để liên kết socket.id tạm thời với persistentId
-const playerSocketMap = new Map(); // Map<socket.id, persistentId>
+app.use(express.static(path.join(__dirname, 'public')));
 
-app.use(express.static(__dirname + '/public'));
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+const adminIo = io.of('/admin');
+adminIo.on('connection', (socket) => {
+    console.log('Một admin đã kết nối.');
+    socket.emit('currentPlayers', Array.from(activePlayerNames));
+});
 
 io.on('connection', (socket) => {
-    console.log('Một người chơi mới đã kết nối:', socket.id);
+    console.log('Một người dùng mới kết nối:', socket.id);
 
-    // THAY ĐỔI MỚI: Lắng nghe sự kiện đăng ký từ client
     socket.on('registerPlayer', (data) => {
         const { persistentId } = data;
         if (!persistentId) return;
-
-        console.log(`Socket ${socket.id} được định danh là ${persistentId}`);
         playerSocketMap.set(socket.id, persistentId);
-
-        // Kiểm tra ngay xem người chơi này có đang bị cooldown từ lần trước không
         const now = Date.now();
         if (cooldowns.has(persistentId) && now < cooldowns.get(persistentId)) {
             const timeLeft = Math.ceil((cooldowns.get(persistentId) - now) / 1000);
@@ -39,46 +44,57 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on('joinGame', (data) => {
+        const playerName = data.playerName.trim();
+        if (activePlayerNames.has(playerName)) {
+            socket.emit('joinError', { message: `Tên tài khoản "${playerName}" đã được sử dụng!` });
+        } else {
+            activePlayerNames.add(playerName);
+            socketIdToPlayerName.set(socket.id, playerName);
+            console.log(`Người chơi "${playerName}" đã tham gia.`);
+            socket.emit('joinSuccess', { playerName: playerName });
+            adminIo.emit('playerJoined', playerName);
+        }
+    });
+
     socket.on('submitPassword', (data) => {
-        const { playerName, passwordAttempt } = data;
         const now = Date.now();
-
-        // THAY ĐỔI: Lấy persistentId từ map thay vì dùng socket.id
         const persistentId = playerSocketMap.get(socket.id);
-        if (!persistentId) {
-            // Trường hợp client chưa kịp đăng ký
-            return; 
-        }
+        const playerName = socketIdToPlayerName.get(socket.id);
+        if (!persistentId || !playerName) return;
+        if (cooldowns.has(persistentId) && now < cooldowns.get(persistentId)) return;
+        cooldowns.delete(persistentId);
 
-        // Kiểm tra cooldown dựa trên persistentId
-        if (cooldowns.has(persistentId) && now < cooldowns.get(persistentId)) {
-            // Không cần gửi lại, vì đã gửi lúc registerPlayer hoặc lúc submit sai
-            return;
-        }
-        cooldowns.delete(persistentId); // Xóa cooldown cũ nếu có
-
-        if (passwordAttempt === CORRECT_PASSWORD) {
+        if (data.passwordAttempt === CORRECT_PASSWORD) {
             io.emit('treasureOpened', {
                 message: `Chúc mừng "${playerName}" đã mở được kho báu!`
             });
-            // Xóa hết cooldown của mọi người khi kho báu đã mở
             cooldowns.clear();
+            
+            // --- CẬP NHẬT: GỬI THÔNG BÁO "ĐÚNG" CHO ADMIN ---
+            adminIo.emit('correctAttempt', playerName);
+
         } else {
             const cooldownUntil = now + COOLDOWN_SECONDS * 1000;
-            // Đặt cooldown dựa trên persistentId
             cooldowns.set(persistentId, cooldownUntil);
-
-            console.log(`Người chơi ${persistentId} nhập sai và bị cooldown.`);
             socket.emit('wrongPassword', {
-                message: `Mật khẩu sai! Vui lòng thử lại sau ${COOLDOWN_SECONDS} giây.`,
+                message: `Mật mã sai! Vui lòng thử lại sau ${COOLDOWN_SECONDS} giây.`,
                 cooldown: COOLDOWN_SECONDS
             });
+            
+            // --- CẬP NHẬT: GỬI THÔNG BÁO "SAI" CHO ADMIN ---
+            adminIo.emit('wrongAttempt', playerName);
         }
     });
 
     socket.on('disconnect', () => {
-        // THAY ĐỔI: Xóa khỏi map khi ngắt kết nối, nhưng giữ lại cooldown
-        console.log(`Người chơi ${playerSocketMap.get(socket.id)} đã ngắt kết nối.`);
+        const playerName = socketIdToPlayerName.get(socket.id);
+        if (playerName) {
+            activePlayerNames.delete(playerName);
+            socketIdToPlayerName.delete(socket.id);
+            console.log(`Người chơi "${playerName}" đã ngắt kết nối.`);
+            adminIo.emit('playerLeft', playerName);
+        }
         playerSocketMap.delete(socket.id);
     });
 });

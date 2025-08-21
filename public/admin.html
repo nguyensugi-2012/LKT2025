@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Bảng điều khiển</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;700&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Quicksand', sans-serif; height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; background: linear-gradient(to top, #000428, #004e92); overflow: hidden; }
+        .glass-container { position: relative; z-index: 1; width: 100%; max-width: 800px; height: 90vh; padding: 30px 40px; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); color: #ffffff; display: flex; flex-direction: column; }
+        h1 { color: #ffffff; font-weight: 700; font-size: 2.2em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); border-bottom: 1px solid rgba(255, 255, 255, 0.3); padding-bottom: 15px; margin-bottom: 15px; text-align: center; }
+        .stats-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .stats-header h2 { font-size: 1.5em; font-weight: 500; }
+        .stats-header #player-count { background-color: #00aaff; color: white; padding: 5px 15px; border-radius: 20px; font-size: 1.2em; font-weight: 700; }
+        #player-list-container { flex-grow: 1; overflow-y: auto; padding-right: 10px; }
+        #player-list-container::-webkit-scrollbar { width: 8px; }
+        #player-list-container::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+        #player-list-container::-webkit-scrollbar-thumb { background: #00aaff; border-radius: 10px; }
+        #player-list { list-style-type: none; padding: 0; }
+        #player-list li { background-color: rgba(255, 255, 255, 0.15); padding: 15px; margin-bottom: 10px; border-radius: 10px; border-left: 5px solid #00aaff; font-size: 1.2em; font-weight: 500; transition: all 0.3s ease-in-out; }
+        #player-list li:hover { transform: scale(1.02); background-color: rgba(255, 255, 255, 0.25); }
+        #player-list li.correct-attempt { background-color: rgba(46, 204, 113, 0.7); border-left-color: #2ecc71; }
+        #player-list li.wrong-attempt { background-color: rgba(231, 76, 60, 0.7); border-left-color: #e74c3c; }
+        .star { position: absolute; top: -10px; background: #fff; border-radius: 50%; box-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff; animation: fall linear forwards; }
+        @keyframes fall { to { transform: translateY(100vh); opacity: 0; } }
+    </style>
+</head>
+<body>
+    <div id="stars-container"></div>
+    <div class="glass-container">
+        <h1>Bảng Điều Khiển</h1>
+        <div class="stats-header">
+            <h2>Người chơi đang tham gia:</h2>
+            <span id="player-count">0</span>
+        </div>
+        <div id="player-list-container">
+            <ul id="player-list"></ul>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io('/admin');
+        const playerCountEl = document.getElementById('player-count');
+        const playerListEl = document.getElementById('player-list');
+
+        // --- HÀM TIỆN ÍCH ---
+        const addPlayerToList = (playerName) => {
+            const li = document.createElement('li');
+            li.textContent = playerName;
+            li.id = `player-${playerName}`;
+            playerListEl.appendChild(li);
+        };
+        const removePlayerFromList = (playerName) => {
+            const playerElement = document.getElementById(`player-${playerName}`);
+            if (playerElement) { playerElement.remove(); }
+        };
+        const highlightPlayerAttempt = (playerName, className) => {
+            const playerElement = document.getElementById(`player-${playerName}`);
+            if (playerElement) {
+                playerElement.classList.add(className);
+                setTimeout(() => {
+                    playerElement.classList.remove(className);
+                }, 2000);
+            }
+        };
+
+        // --- LẮNG NGHE SỰ KIỆN TỪ SERVER ---
+        socket.on('currentPlayers', (players) => {
+            playerListEl.innerHTML = '';
+            players.forEach(playerName => addPlayerToList(playerName));
+            playerCountEl.textContent = players.length;
+        });
+
+        socket.on('playerJoined', (playerName) => {
+            addPlayerToList(playerName);
+            playerCountEl.textContent = parseInt(playerCountEl.textContent) + 1;
+        });
+
+        socket.on('playerLeft', (playerName) => {
+            removePlayerFromList(playerName);
+            playerCountEl.textContent = parseInt(playerCountEl.textContent) - 1;
+        });
+
+        socket.on('correctAttempt', (playerName) => {
+            highlightPlayerAttempt(playerName, 'correct-attempt');
+        });
+
+        socket.on('wrongAttempt', (playerName) => {
+            highlightPlayerAttempt(playerName, 'wrong-attempt');
+        });
+
+        // --- LOGIC SAO RƠI ---
+        function createStar() {
+            const star = document.createElement('div');
+            star.classList.add('star');
+            const size = Math.random() * 3 + 1;
+            star.style.width = `${size}px`; star.style.height = `${size}px`;
+            star.style.left = `${Math.random() * 100}%`;
+            const duration = Math.random() * 3 + 2;
+            star.style.animationDuration = `${duration}s`;
+            document.body.appendChild(star);
+            setTimeout(() => { star.remove(); }, duration * 1000);
+        }
+        setInterval(createStar, 100);
+    </script>
+</body>
+</html>

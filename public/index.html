@@ -4,34 +4,82 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chặng Cuối: Mở Kho Báu</title>
-    <!-- CSS không thay đổi -->
-    <style>@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500&display=swap');* { margin: 0; padding: 0; box-sizing: border-box; }body { font-family: 'Quicksand', sans-serif; height: 100vh; display: flex; justify-content: center; align-items: center; background: linear-gradient(to top, #000428, #004e92); overflow: hidden; }#start-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 100; backdrop-filter: blur(5px); }#start-button { padding: 20px 40px; font-size: 1.5em; font-family: 'Quicksand', sans-serif; color: white; background: #00aaff; border: 2px solid white; border-radius: 15px; cursor: pointer; transition: all 0.3s ease; }#start-button:hover { background: white; color: #00aaff; }.glass-container { position: relative; z-index: 1; padding: 40px 30px; width: 90%; max-width: 420px; text-align: center; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); }h1 { color: #ffffff; font-weight: 500; font-size: 2em; margin-bottom: 25px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }input { width: 100%; padding: 15px; margin-bottom: 15px; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 10px; background: rgba(255, 255, 255, 0.2); color: #ffffff; font-size: 1em; font-family: 'Quicksand', sans-serif; outline: none; transition: all 0.2s ease; }input::placeholder { color: rgba(255, 255, 255, 0.7); }input:focus { background: rgba(255, 255, 255, 0.3); border-color: rgba(255, 255, 255, 0.5); }button#submitButton { width: 100%; padding: 15px; background: #00aaff; color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 1.2em; font-weight: 500; transition: background-color 0.3s ease; }button#submitButton:hover:not(:disabled) { background: #0088cc; }button#submitButton:disabled { background: #555; cursor: not-allowed; }#message { margin-top: 20px; font-weight: 500; min-height: 24px; }.error { color: #ff9999; }.success { color: #aaffaa; font-size: 1.5em; animation: tada 1.5s ease; }@keyframes tada {0% {transform: scale(1);} 10%, 20% {transform: scale(0.9) rotate(-3deg);} 30%, 50%, 70%, 90% {transform: scale(1.1) rotate(3deg);} 40%, 60%, 80% {transform: scale(1.1) rotate(-3deg);} 100% {transform: scale(1) rotate(0);}}.star { position: absolute; top: -10px; background: #fff; border-radius: 50%; box-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff; animation: fall linear forwards; }@keyframes fall { to { transform: translateY(100vh); opacity: 0; } }</style>
+    <style>
+        /* CSS gần như giữ nguyên, chỉ thêm một vài quy tắc nhỏ */
+        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Quicksand', sans-serif; height: 100vh; display: flex; justify-content: center; align-items: center; background: linear-gradient(to top, #000428, #004e92); overflow: hidden; }
+        .glass-container { position: relative; z-index: 1; padding: 40px 30px; width: 90%; max-width: 420px; text-align: center; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); }
+        h1 { color: #ffffff; font-weight: 500; font-size: 2em; margin-bottom: 25px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+        h2 { color: #eee; font-weight: 400; margin-bottom: 20px; font-size: 1.2em;}
+        input { width: 100%; padding: 15px; margin-bottom: 15px; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 10px; background: rgba(255, 255, 255, 0.2); color: #ffffff; font-size: 1em; font-family: 'Quicksand', sans-serif; outline: none; transition: all 0.2s ease; }
+        input::placeholder { color: rgba(255, 255, 255, 0.7); }
+        input:focus { background: rgba(255, 255, 255, 0.3); border-color: rgba(255, 255, 255, 0.5); }
+        button { width: 100%; padding: 15px; background: #00aaff; color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 1.2em; font-weight: 500; transition: background-color 0.3s ease; }
+        button:hover:not(:disabled) { background: #0088cc; }
+        button:disabled { background: #555; cursor: not-allowed; }
+        #message, #login-message { margin-top: 20px; font-weight: 500; min-height: 24px; }
+        .error { color: #ff9999; }
+        .success { color: #aaffaa; font-size: 1.5em; animation: tada 1.5s ease; }
+        @keyframes tada {0% {transform: scale(1);} 10%, 20% {transform: scale(0.9) rotate(-3deg);} 30%, 50%, 70%, 90% {transform: scale(1.1) rotate(3deg);} 40%, 60%, 80% {transform: scale(1.1) rotate(-3deg);} 100% {transform: scale(1) rotate(0);}}
+        .star { position: absolute; top: -10px; background: #fff; border-radius: 50%; box-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff; animation: fall linear forwards; }
+        @keyframes fall { to { transform: translateY(100vh); opacity: 0; } }
+        #instruction-box { position: absolute; top: 20px; right: 20px; padding: 15px; max-width: 280px; z-index: 50; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 10px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); text-align: left; color: #e0e0e0; font-size: 0.9em; }
+        #instruction-box h4 { color: #fff; margin-bottom: 8px; font-weight: 500; border-bottom: 1px solid rgba(255, 255, 255, 0.3); padding-bottom: 5px; }
+        #instruction-box strong { color: #aaffaa; }
+        @media (max-width: 768px) { #instruction-box { top: 15px; left: 50%; transform: translateX(-50%); right: auto; width: 90%; max-width: none; } }
+    </style>
 </head>
 <body>
-    <div id="start-overlay"><button id="start-button">Bắt Đầu Chơi</button></div>
+    <div id="instruction-box">
+        <h4>Hướng Dẫn</h4>
+        <p>Tài khoản phải đúng cú pháp: <strong>LKT2025_TEAM[...]</strong></p>
+        <p>Tài khoản chỉ được dùng trên 1 thiết bị duy nhất.</p>
+    </div>
     <div id="stars-container"></div>
-    <div class="glass-container" id="game-container">
-        <!-- Đổi tiêu đề nếu muốn, ví dụ: -->
+    
+    <!-- MÀN HÌNH MỚI: MÀN HÌNH THAM GIA (LOGIN) -->
+    <div class="glass-container" id="login-container">
+        <h1>Tham Gia Cuộc Thi</h1>
+        <input type="text" id="loginNameInput" placeholder="Nhập tên tài khoản của bạn...">
+        <button id="joinButton" onclick="joinGame()">Tham Gia</button>
+        <p id="login-message" class="error"></p>
+    </div>
+
+    <!-- Màn hình game chính, ban đầu sẽ bị ẩn đi -->
+    <div class="glass-container" id="game-container" style="display: none;">
+        <h2 id="welcome-message"></h2>
         <h1>Nhập Mật Mã Kho Báu</h1>
-        <input type="text" id="playerName" placeholder="Nhập tên của bạn...">
-        <!-- THAY ĐỔI Ở ĐÂY -->
         <input type="password" id="passwordInput" placeholder="Nhập mật mã...">
-        <button id="submitButton" onclick="submitPassword()">Thử Vận May</button>
+        <button id="submitButton" onclick="submitPassword()">Mở Khóa</button>
         <p id="message"></p>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        const playerNameInput = document.getElementById('playerName');
-        const passwordInput = document.getElementById('passwordInput');
-        const submitButton = document.getElementById('submitButton');
-        const messageEl = document.getElementById('message');
+        // Lấy các element từ cả 2 màn hình
+        const loginContainer = document.getElementById('login-container');
         const gameContainer = document.getElementById('game-container');
-        const startOverlay = document.getElementById('start-overlay');
-        const startButton = document.getElementById('start-button');
+        const loginNameInput = document.getElementById('loginNameInput');
+        const passwordInput = document.getElementById('passwordInput');
+        const loginMessageEl = document.getElementById('login-message');
+        const messageEl = document.getElementById('message');
+        const welcomeMessageEl = document.getElementById('welcome-message');
+
         let countdownInterval;
         let successSound, errorSound;
+        
+        function initAudio() {
+            if (!successSound) { 
+                successSound = new Audio('/audio/success.mp3');
+                errorSound = new Audio('/audio/error.mp3');
+                successSound.volume = 0.5;
+                errorSound.volume = 0.5;
+            }
+        }
+        window.addEventListener('click', initAudio, { once: true });
+        window.addEventListener('keydown', initAudio, { once: true });
 
         function getOrSetPlayerId() {
             let playerId = localStorage.getItem('treasureHuntPlayerId');
@@ -41,47 +89,75 @@
             }
             return playerId;
         }
-
         const persistentId = getOrSetPlayerId();
-
         socket.on('connect', () => {
-            console.log('Đã kết nối tới server, gửi persistentId:', persistentId);
             socket.emit('registerPlayer', { persistentId });
         });
         
-        startButton.addEventListener('click', () => {
-            successSound = new Audio('/audio/success.mp3');
-            errorSound = new Audio('/audio/error.mp3');
-            successSound.volume = 0.5;
-            errorSound.volume = 0.5;
-            startOverlay.style.display = 'none';
+        // --- HÀM MỚI: GỬI YÊU CẦU THAM GIA LÊN SERVER ---
+        function joinGame() {
+            const playerName = loginNameInput.value;
+            if (!playerName.trim()) {
+                loginMessageEl.textContent = "Vui lòng nhập tên tài khoản!";
+                return;
+            }
+            socket.emit('joinGame', { playerName });
+        }
+
+        // --- SỰ KIỆN MỚI: XỬ LÝ KHI THAM GIA THÀNH CÔNG ---
+        socket.on('joinSuccess', (data) => {
+            loginContainer.style.display = 'none'; // Ẩn màn hình login
+            gameContainer.style.display = 'block'; // Hiện màn hình game
+            welcomeMessageEl.textContent = `Xin chào, ${data.playerName}!`;
         });
-        
+
+        // --- SỰ KIỆN MỚI: XỬ LÝ KHI THAM GIA THẤT BẠI ---
+        socket.on('joinError', (data) => {
+            loginMessageEl.textContent = data.message;
+        });
+
+        // Các sự kiện và hàm cũ
         socket.on('wrongPassword', (data) => {
-            messageEl.textContent = "Mật mã sai! Vui lòng thử lại sau " + data.cooldown + " giây."; // Cập nhật cả ở đây
+            messageEl.textContent = data.message;
             messageEl.className = 'error';
             if (errorSound) errorSound.play();
             startCountdown(data.cooldown);
         });
         
         socket.on('cooldownActive', (data) => {
-            messageEl.textContent = "Bạn phải đợi " + data.cooldown + " giây nữa để thử lại."; // Cập nhật cả ở đây
+            messageEl.textContent = data.message;
             messageEl.className = 'error';
             startCountdown(data.cooldown);
         });
 
         socket.on('treasureOpened', (data) => {
             clearInterval(countdownInterval);
-            setInputsDisabled(false);
-            submitButton.textContent = "Thử Vận May";
-            gameContainer.innerHTML = `<h1 class="success">${data.message}</h1>`;
+            if (gameContainer.style.display !== 'none') {
+                gameContainer.innerHTML = `<h1 class="success">${data.message}</h1>`;
+            } else {
+                loginContainer.innerHTML = `<h1 class="success">${data.message}</h1>`;
+            }
             if (successSound) successSound.play();
         });
+
+        function submitPassword() {
+            const passwordAttempt = passwordInput.value.trim();
+            if (!passwordAttempt) {
+                alert('Vui lòng nhập mật mã!');
+                return;
+            }
+            messageEl.textContent = '';
+            socket.emit('submitPassword', { passwordAttempt });
+        }
+
+        // Các hàm tiện ích khác không có nhiều thay đổi
+        function startCountdown(seconds) { /* ... giữ nguyên ... */ }
+        function setInputsDisabled(disabled) { /* ... giữ nguyên ... */ }
+        function createStar() { /* ... giữ nguyên ... */ }
 
         function startCountdown(seconds) {
             setInputsDisabled(true);
             let timeLeft = Math.max(0, seconds);
-            
             clearInterval(countdownInterval);
             countdownInterval = setInterval(() => {
                 if (timeLeft <= 0) {
@@ -89,43 +165,23 @@
                     messageEl.textContent = 'Bạn có thể thử lại ngay bây giờ!';
                     messageEl.className = '';
                     setInputsDisabled(false);
-                    submitButton.textContent = "Thử Vận May";
+                    document.getElementById('submitButton').textContent = "Mở Khóa";
                 } else {
                     messageEl.textContent = `Vui lòng đợi...`;
-                    submitButton.textContent = `${timeLeft} giây`;
+                    document.getElementById('submitButton').textContent = `${timeLeft} giây`;
                     timeLeft--;
                 }
             }, 1000);
-
             if (timeLeft > 0) {
                  messageEl.textContent = `Vui lòng đợi...`;
-                 submitButton.textContent = `${timeLeft} giây`;
+                 document.getElementById('submitButton').textContent = `${timeLeft} giây`;
             }
         }
-        
-        function submitPassword() {
-            const playerName = playerNameInput.value.trim();
-            const passwordAttempt = passwordInput.value.trim();
-            if (!playerName || !passwordAttempt) {
-                // THAY ĐỔI Ở ĐÂY
-                alert('Vui lòng nhập đầy đủ tên và mật mã!');
-                return;
-            }
-            if (!successSound) {
-                alert('Vui lòng nhấn nút "Bắt Đầu Chơi" trước!');
-                return;
-            }
-            messageEl.textContent = '';
-            messageEl.className = '';
-            socket.emit('submitPassword', { playerName, passwordAttempt });
-        }
-
         function setInputsDisabled(disabled) {
-            playerNameInput.disabled = disabled;
             passwordInput.disabled = disabled;
-            submitButton.disabled = disabled;
+            document.getElementById('submitButton').disabled = disabled;
         }
-
+        setInterval(createStar, 100);
         function createStar() {
             const star = document.createElement('div');
             star.classList.add('star');
@@ -137,7 +193,6 @@
             document.body.appendChild(star);
             setTimeout(() => { star.remove(); }, duration * 1000);
         }
-        setInterval(createStar, 100);
     </script>
 </body>
 </html>
